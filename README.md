@@ -7,15 +7,16 @@ A small Tampermonkey userscript that adds fullscreen mode to every game on [Poki
 1. Install [Tampermonkey](https://www.tampermonkey.net/) or Violentmonkey.
 2. Open [`poki-fullscreen.user.js`](./poki-fullscreen.user.js) on GitHub.
 3. Click **Raw** and confirm the installation in your userscript manager.
-4. Open any Poki game and click the **⛶** button in the top-right corner of the game.
+4. Open any Poki game and click the black **Fullscreen** icon in Poki's menu below the game.
 
-Press `Esc` or click **×** to leave fullscreen mode.
+Press `Esc` to leave fullscreen mode.
 
 ## How it works
 
 - Finds Poki's `#game-player` dynamically.
 - Ensures the game iframe has fullscreen permission.
-- Adds its own fullscreen button inside the game player.
+- Adds a native-looking fullscreen button to Poki's menu below the game.
+- Colours the fullscreen icon black so you can see that the script is active.
 - Keeps working when Poki loads or replaces the game dynamically.
 - Forces the game and its iframe to fill the entire screen.
 
