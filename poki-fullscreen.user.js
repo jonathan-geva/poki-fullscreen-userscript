@@ -3,7 +3,7 @@
 // @namespace    https://github.com/jonathan-geva/poki-fullscreen-userscript
 // @version      1.0.0
 // @description  Adds fullscreen mode to every game on Poki, even when Poki hides its own button.
-// @author       Jonathan Geva
+// @author       Anonymous
 // @match        https://poki.com/*/g/*
 // @match        https://www.poki.com/*/g/*
 // @icon         https://poki.com/favicon.ico
