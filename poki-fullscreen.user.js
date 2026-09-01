@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Poki Fullscreen for Every Game
 // @namespace    https://github.com/jonathan-geva/poki-fullscreen-userscript
-// @version      1.0.0
+// @version      1.1.0
 // @description  Adds fullscreen mode to every game on Poki, even when Poki hides its own button.
 // @author       Anonymous
 // @match        https://poki.com/*/g/*
@@ -21,6 +21,7 @@
 
   const BUTTON_ID = "poki-universal-fullscreen-button";
   const STYLE_ID = "poki-universal-fullscreen-style";
+  const ACTIVE_CLASS = "poki-universal-fullscreen-active";
 
   function getFullscreenElement() {
     return document.fullscreenElement || document.webkitFullscreenElement || null;
@@ -69,54 +70,14 @@
     }
   }
 
-  function updateButton() {
-    const button = document.getElementById(BUTTON_ID);
-    if (!button) return;
-
-    const isFullscreen = Boolean(getFullscreenElement());
-    button.textContent = isFullscreen ? "×" : "⛶";
-    button.title = isFullscreen ? "Vollbild beenden (Esc)" : "Vollbild";
-    button.setAttribute("aria-label", button.title);
-  }
-
   function addStyles() {
     if (document.getElementById(STYLE_ID)) return;
 
     const style = document.createElement("style");
     style.id = STYLE_ID;
     style.textContent = `
-      #game-player {
-        position: relative !important;
-      }
-
-      #${BUTTON_ID} {
-        position: absolute;
-        top: 12px;
-        right: 12px;
-        z-index: 2147483647;
-        display: grid;
-        width: 44px;
-        height: 44px;
-        padding: 0;
-        place-items: center;
-        border: 0;
-        border-radius: 12px;
-        background: rgba(20, 20, 24, 0.78);
-        box-shadow: 0 3px 14px rgba(0, 0, 0, 0.32);
-        color: #fff;
-        font: 700 29px/1 Arial, sans-serif;
-        cursor: pointer;
-        opacity: 0.72;
-        transition: opacity 120ms ease, transform 120ms ease, background 120ms ease;
-      }
-
-      #${BUTTON_ID}:hover,
-      #${BUTTON_ID}:focus-visible {
-        background: rgba(20, 20, 24, 0.94);
-        opacity: 1;
-        outline: 3px solid #fff;
-        outline-offset: 2px;
-        transform: scale(1.05);
+      .${ACTIVE_CLASS} [role="img"] {
+        background-color: #000 !important;
       }
 
       #game-player:fullscreen,
@@ -141,21 +102,66 @@
     document.head.appendChild(style);
   }
 
-  function addButton() {
-    const player = getGamePlayer();
-    if (!player || document.getElementById(BUTTON_ID)) return;
+  function findReportButton() {
+    const flagIcon = document.querySelector(
+      'button span[style*="ui-icons-flag.svg"]'
+    );
 
-    const button = document.createElement("button");
+    if (flagIcon) return flagIcon.closest("button");
+
+    return Array.from(document.querySelectorAll("button")).find((button) =>
+      /report a bug/i.test(button.textContent || "")
+    );
+  }
+
+  function makeButtonNative(button) {
+    button.classList.add(ACTIVE_CLASS);
+    button.title = "Fullscreen - Poki Fullscreen script active";
+    button.setAttribute("aria-label", button.title);
+  }
+
+  function addButton() {
+    const nativeButton = document.getElementById("fullscreen-button");
+    const customButton = document.getElementById(BUTTON_ID);
+
+    if (nativeButton) {
+      customButton?.remove();
+      makeButtonNative(nativeButton);
+      return;
+    }
+
+    if (customButton) return;
+
+    const reportButton = findReportButton();
+    const reportWrapper = reportButton?.parentElement;
+    const menu = reportWrapper?.parentElement;
+    if (!reportButton || !reportWrapper || !menu) return;
+
+    const button = reportButton.cloneNode(true);
     button.id = BUTTON_ID;
     button.type = "button";
+
+    const icon = button.querySelector('[role="img"]');
+    icon?.setAttribute("aria-label", "ui-icons-fullscreen");
+    icon?.style.setProperty(
+      "--icon-src",
+      "url('https://a.poki-cdn.com/icons/ui-masks/ui-icons-fullscreen.svg')"
+    );
+
+    const labels = Array.from(button.querySelectorAll("span"));
+    const visibleLabel = labels.find((label) =>
+      /report a bug/i.test(label.textContent || "")
+    ) || labels.at(-1);
+    if (visibleLabel) visibleLabel.textContent = "Fullscreen";
+
+    makeButtonNative(button);
     button.addEventListener("click", (event) => {
       event.preventDefault();
       event.stopPropagation();
       void toggleFullscreen();
     });
 
-    player.appendChild(button);
-    updateButton();
+    reportWrapper.after(button);
   }
 
   function initialize() {
@@ -163,9 +169,6 @@
     enableIframeFullscreen();
     addButton();
   }
-
-  document.addEventListener("fullscreenchange", updateButton);
-  document.addEventListener("webkitfullscreenchange", updateButton);
 
   const observer = new MutationObserver(initialize);
   observer.observe(document.documentElement, { childList: true, subtree: true });
